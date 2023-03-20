@@ -1,9 +1,21 @@
 import sys
 from differ import diff, Addition, Removal, Unchanged
 
+theseAreFiles = False
 if len(sys.argv) > 2:
     current = sys.argv[1]
     new = sys.argv[2]
+    theseAreFiles = sys.argv[3] == '1' if len(sys.argv) > 3 else False
+    if theseAreFiles:
+        current = open(current, 'r')
+        new = open(new, 'r')
+        
+        current_ = current.read()
+        current.close()
+        current = current_
+        new_ = new.read()
+        new.close()
+        new = new_
 else:
     marker = "special ending marker 1111111111112310239120391203901239029132323"
 
@@ -26,14 +38,19 @@ else:
 # currentLine = 0
 currentCharOnLine = 0
 
+# Configurable #
 debugMode = True # Configurable
+verbosityLevelForDebugMode = 2 # 0 is quietest, 1 is higher, 2 is highest
+stripTabs = True # Removes tabs
+# #
+
 correctForDrift = True # When you drift in the editor like going right and then down sometimes doesn't bring you back to the start of a line
 
 # Get from `current` to `new` with a series of edits.
 results = diff(current, new)
 commands = [] # AutoHotkey key codes
 def left(msg):
-    if debugMode:
+    if debugMode and verbosityLevelForDebugMode > 1:
         print('left:', msg, file=sys.stderr)
     addCommand("{Left}")
 def down(msg):
@@ -43,25 +60,36 @@ def down(msg):
             left('drift compensation #' + str(i))
     currentCharOnLine = 0 # On a new line now, so go back to the start
 
-    if debugMode:
+    if debugMode and verbosityLevelForDebugMode > 1:
         print('down:', msg, file=sys.stderr)
     addCommand("{Down}")
 def right(msg):
     global currentCharOnLine
-    if debugMode:
+    if debugMode and verbosityLevelForDebugMode > 1:
         print('right:', msg, file=sys.stderr)
     addCommand("{Right}")
     currentCharOnLine += 1
 def addEscapedCommand(str_): # Insert plain text
     global currentCharOnLine
-    if debugMode:
+    if debugMode and verbosityLevelForDebugMode > 1:
         print('addEscapedCommand:', repr(str_), file=sys.stderr)
     # Escape curly braces '}', '{' using {}} and {{}       ( https://www.autohotkey.com/board/topic/32092-escape-curly-braces-in-hotstring/ )
     assert len(str_) == 1
-    commands.append(str_.replace('}', '{}}').replace('{', '{{}')) # TODO: test this
+    # https://www.autohotkey.com/docs/v1/misc/EscapeChar.htm : "When the Send command or Hotstrings are used in their default (non-raw) mode, characters such as {}^!+# have special meaning. Therefore, to use them literally in these cases, enclose them in braces. For example: Send {^}{!}{{}."
+    charMap = {
+        '}' : '{}}',
+        '{' : '{{}',
+        '^' : '{^}',
+        '!' : '{!}',
+        '+' : '{+}',
+        '#' : '{#}',
+        '\t' : '    ' if not stripTabs else '' # (tabs are replaced with spaces too)
+    }
+    newStr = ''.join([(charMap[x] if x in charMap else x) for x in str_]) # For each character in the string, replace them if they are special ones that need to be escaped
+    commands.append(newStr) # TODO: test this
     currentCharOnLine += 1
 def addCommand(str_): # Insert plain text or AHK commands in braces
-    if debugMode:
+    if debugMode and verbosityLevelForDebugMode > 0:
         print('addCommand:', repr(str_), file=sys.stderr)
     commands.append(str_)
 if debugMode:
@@ -109,5 +137,5 @@ while i < len(results):
 
 res = ''.join(commands)
 if debugMode:
-    print(res, file=sys.stderr)
+    print('\n\n', res, sep='', file=sys.stderr)
 print(res)

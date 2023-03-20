@@ -25,13 +25,49 @@ RunWaitOne(command, input1, input2, byref stderrOutput) {
     return exec.StdOut.ReadAll()
 }
 
+; Saves the `clipboard_` variable to a file
+SaveClipboard_(clipboard_) {
+       ; https://stackoverflow.com/questions/67121794/autohotkey-writing-special-characters-to-a-file , https://www.autohotkey.com/docs/v1/lib/FileOpen.htm
+	txtfile := FileOpen("lastPasteTyped.txt", "w", UTF-8)
+        txtfile.write(clipboard_)
+        txtfile.close()
+}
+; Loads the `clipboard_` variable from a file
+LoadClipboard_() {
+        ; https://www.autohotkey.com/docs/v1/lib/FileRead.htm
+	FileRead, clipboard_, lastPasteTyped.txt
+        ; if not ErrorLevel  ; Successfully loaded.
+	; {
+        ;   msgbox, Loaded last typed text from lastPasteTyped.txt
+        ; }
+	return clipboard_
+}
+clipboard_ := LoadClipboard_()
+
 
 +!o:: ; Shift-Alt-o : mark original as already pasted
 clipboard_ := Clipboard
+SaveClipboard_(clipboard_)
 return
 
 
++!i:: ; Shift-Alt-i : clear last saved clipboard contents
+; https://www.autohotkey.com/board/topic/18650-how-to-create-a-yes-no-message-box-with-a-goto-a-label/
+  MSGBox, 4, , Clear last saved clipboard contents?
+  IfMsgBox, No 
+    return
+  Else {
+    clipboard_ := ""
+    SaveClipboard_(clipgoard_)
+  }
+  return
+
 +!p:: ; Shift-Alt-p : paste deltas
+; computercraft fixes ;
+Send, {Space up}
+Send, {Ctrl up}
+; ;
+
 clipboard_new := Clipboard
 
 ; Find differences in clipboard using Python
@@ -46,12 +82,21 @@ stderrOutput := "<None>"
 keys := RunWaitOne(Concatenate2("python ", script), clipboard_, clipboard_new, stderrOutput)
 ;MsgBox % keys
 if (stderrOutput != "") {
-	MsgBox % Concatenate2("Errors:`n", stderrOutput)
+	MsgBox % "Prev clipboard: " clipboard_ "`n" Concatenate2("Errors:`n", stderrOutput)
 }
-SetKeyDelay 100
+;SetKeyDelay 100
+SetKeyDelay 15
 Send %keys%
+Send {Backspace}{Backspace} ; Hack to delete extra two newlines added for some weird unknown reason by AHK
+
+  MSGBox, 4, , Was it successful?`n("No" will keep using old diff)
+  IfMsgBox, No
+    return ; don't save paste contents
+  Else {
+  }
 
 clipboard_ := clipboard_new
+SaveClipboard_(clipboard_)
 return
 
 
