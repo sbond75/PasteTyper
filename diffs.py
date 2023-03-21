@@ -41,7 +41,7 @@ currentCharOnLine = 0
 # Configurable #
 debugMode = False # Configurable
 verbosityLevelForDebugMode = 2 # 0 is quietest, 1 is higher, 2 is highest
-stripTabs = True # Removes tabs
+stripTabs = False # Removes tabs
 # #
 
 correctForDrift = True # When you drift in the editor like going right and then down sometimes doesn't bring you back to the start of a line

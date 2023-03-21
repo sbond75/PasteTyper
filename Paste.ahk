@@ -1,3 +1,7 @@
+;; Config ;;
+stripTabs := true ; Removes tabs if set to `true`. Use `false` to make it not remove tabs.
+;; ;;
+
 Thread, interrupt, 50, 2000 ; attempt to do https://www.autohotkey.com/board/topic/48908-how-do-i-stop-a-runaway-script-panic-button/
 
 ; https://www.autohotkey.com/docs/v1/lib/SetWorkingDir.htm
@@ -99,6 +103,17 @@ RunWaitOne2(command, byref stderrOutput) {
 }
 
 
+ReadClipboard() {
+        Global stripTabs
+
+        retval := Clipboard
+        if (stripTabs = true) {
+	  StringCaseSense, On
+          retval := StrReplace(retval, A_Tab) ; replace tabs with the empty string
+        }
+	return retval
+}
+
 ; Saves the `clipboard_` variable to a file
 SaveClipboard_(clipboard_) {
        ; https://stackoverflow.com/questions/67121794/autohotkey-writing-special-characters-to-a-file , https://www.autohotkey.com/docs/v1/lib/FileOpen.htm
@@ -120,7 +135,7 @@ clipboard_ := LoadClipboard_()
 
 
 +!o:: ; Shift-Alt-o : mark original as already pasted
-clipboard_ := Clipboard
+clipboard_ := ReadClipboard()
 SaveClipboard_(clipboard_)
 return
 
@@ -142,7 +157,7 @@ Send, {Space up}
 Send, {Ctrl up}
 ; ;
 
-clipboard_new := Clipboard
+clipboard_new := ReadClipboard()
 
 txtfile2 := FileOpen("newClipboard.txt", "w", UTF-8)
 txtfile2.write(clipboard_new)
