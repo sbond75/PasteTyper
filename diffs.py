@@ -39,7 +39,7 @@ else:
 currentCharOnLine = 0
 
 # Configurable #
-debugMode = True # Configurable
+debugMode = False # Configurable
 verbosityLevelForDebugMode = 2 # 0 is quietest, 1 is higher, 2 is highest
 stripTabs = True # Removes tabs
 # #
@@ -67,7 +67,7 @@ def right(msg):
     global currentCharOnLine
     if debugMode and verbosityLevelForDebugMode > 1:
         print('right:', msg, file=sys.stderr)
-    addCommand("{Right}")
+    addCommand("{Right}") # TODO: add sleep for going right.. custom sleep commands for ahk? Maybe use something like `Loop, parse, {Right}` and then add sleeps, then send {Right}
     currentCharOnLine += 1
 def addEscapedCommand(str_): # Insert plain text
     global currentCharOnLine

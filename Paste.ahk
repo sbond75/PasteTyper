@@ -3,6 +3,67 @@ Thread, interrupt, 50, 2000 ; attempt to do https://www.autohotkey.com/board/top
 ; https://www.autohotkey.com/docs/v1/lib/SetWorkingDir.htm
 SetWorkingDir %A_ScriptDir%
 
+; https://www.autohotkey.com/boards/viewtopic.php?t=791
+; ----------------------------------------------------------------------------------------------------------------------
+; Function .....: StdoutToVar_CreateProcess
+; Description ..: Runs a command line program and returns its output.
+; Parameters ...: sCmd      - Commandline to execute.
+; ..............: sEncoding - Encoding used by the target process. Look at StrGet() for possible values.
+; ..............: sDir      - Working directory.
+; ..............: nExitCode - Process exit code, receive it as a byref parameter.
+; Return .......: Command output as a string on success, empty string on error.
+; AHK Version ..: AHK_L x32/64 Unicode/ANSI
+; Author .......: Sean (http://goo.gl/o3VCO8), modified by nfl and by Cyruz
+; License ......: WTFPL - http://www.wtfpl.net/txt/copying/
+; Changelog ....: Feb. 20, 2007 - Sean version.
+; ..............: Sep. 21, 2011 - nfl version.
+; ..............: Nov. 27, 2013 - Cyruz version (code refactored and exit code).
+; ..............: Mar. 09, 2014 - Removed input, doesn't seem reliable. Some code improvements.
+; ..............: Mar. 16, 2014 - Added encoding parameter as pointed out by lexikos.
+; ..............: Jun. 02, 2014 - Corrected exit code error.
+; ..............: Nov. 02, 2016 - Fixed blocking behavior due to ReadFile thanks to PeekNamedPipe.
+; ----------------------------------------------------------------------------------------------------------------------
+StdoutToVar_CreateProcess(sCmd, sEncoding:="CP0", sDir:="", ByRef nExitCode:=0) {
+    DllCall( "CreatePipe",           PtrP,hStdOutRd, PtrP,hStdOutWr, Ptr,0, UInt,0 )
+    DllCall( "SetHandleInformation", Ptr,hStdOutWr, UInt,1, UInt,1                 )
+
+            VarSetCapacity( pi, (A_PtrSize == 4) ? 16 : 24,  0 )
+    siSz := VarSetCapacity( si, (A_PtrSize == 4) ? 68 : 104, 0 )
+    NumPut( siSz,      si,  0,                          "UInt" )
+    NumPut( 0x100,     si,  (A_PtrSize == 4) ? 44 : 60, "UInt" )
+    NumPut( hStdOutWr, si,  (A_PtrSize == 4) ? 60 : 88, "Ptr"  )
+    NumPut( hStdOutWr, si,  (A_PtrSize == 4) ? 64 : 96, "Ptr"  )
+
+    If ( !DllCall( "CreateProcess", Ptr,0, Ptr,&sCmd, Ptr,0, Ptr,0, Int,True, UInt,0x08000000
+                                  , Ptr,0, Ptr,sDir?&sDir:0, Ptr,&si, Ptr,&pi ) )
+        Return ""
+      , DllCall( "CloseHandle", Ptr,hStdOutWr )
+      , DllCall( "CloseHandle", Ptr,hStdOutRd )
+
+    DllCall( "CloseHandle", Ptr,hStdOutWr ) ; The write pipe must be closed before reading the stdout.
+    While ( 1 )
+    { ; Before reading, we check if the pipe has been written to, so we avoid freezings.
+        If ( !DllCall( "PeekNamedPipe", Ptr,hStdOutRd, Ptr,0, UInt,0, Ptr,0, UIntP,nTot, Ptr,0 ) )
+            Break
+        If ( !nTot )
+        { ; If the pipe buffer is empty, sleep and continue checking.
+            Sleep, 100
+            Continue
+        } ; Pipe buffer is not empty, so we can read it.
+        VarSetCapacity(sTemp, nTot+1)
+        DllCall( "ReadFile", Ptr,hStdOutRd, Ptr,&sTemp, UInt,nTot, PtrP,nSize, Ptr,0 )
+        sOutput .= StrGet(&sTemp, nSize, sEncoding)
+    }
+    
+    ; * SKAN has managed the exit code through SetLastError.
+    DllCall( "GetExitCodeProcess", Ptr,NumGet(pi,0), UIntP,nExitCode )
+    DllCall( "CloseHandle",        Ptr,NumGet(pi,0)                  )
+    DllCall( "CloseHandle",        Ptr,NumGet(pi,A_PtrSize)          )
+    DllCall( "CloseHandle",        Ptr,hStdOutRd                     )
+    Return sOutput
+}
+
+
 ; https://www.autohotkey.com/boards/viewtopic.php?t=19736
 Concatenate2(x, y) {
     Return, x y
@@ -24,6 +85,19 @@ RunWaitOne(command, input1, input2, byref stderrOutput) {
     stderrOutput := exec.StdErr.ReadAll()
     return exec.StdOut.ReadAll()
 }
+RunWaitOne2(command, byref stderrOutput) {
+    marker := "special ending marker 1111111111112310239120391203901239029132323"
+
+    shell := ComObjCreate("WScript.Shell")
+    ; Execute a single command via cmd.exe
+    ;;exec := shell.Exec(ComSpec " /C " command " lastPasteTyped.txt newClipboard.txt 1")
+    ;;exec.StdIn.Close()
+    ; Read and return the command's output
+    ;stderrOutput := exec.StdErr.ReadAll()
+    ;;return exec.StdOut.ReadAll()
+    return StdoutToVar_CreateProcess(command " lastPasteTyped.txt newClipboard.txt 1", "UTF-8")
+}
+
 
 ; Saves the `clipboard_` variable to a file
 SaveClipboard_(clipboard_) {
@@ -70,6 +144,10 @@ Send, {Ctrl up}
 
 clipboard_new := Clipboard
 
+txtfile2 := FileOpen("newClipboard.txt", "w", UTF-8)
+txtfile2.write(clipboard_new)
+txtfile2.close()
+
 ; Find differences in clipboard using Python
 ; https://www.autohotkey.com/boards/viewtopic.php?style=19&f=76&t=98016 , https://www.autohotkey.com/docs/v1/lib/Run.htm
 ;dir    := A_ScriptDir
@@ -79,13 +157,16 @@ script  = diffs.py
 ;MsgBox % clipboard_
 ;MsgBox % clipboard_new
 stderrOutput := "<None>"
-keys := RunWaitOne(Concatenate2("python ", script), clipboard_, clipboard_new, stderrOutput)
+;keys := RunWaitOne(Concatenate2("python ", script), clipboard_, clipboard_new, stderrOutput)
+keys := RunWaitOne2(Concatenate2("python ", script), stderrOutput)
 ;MsgBox % keys
 if (stderrOutput != "") {
-	MsgBox % "Prev clipboard: " clipboard_ "`n" Concatenate2("Errors:`n", stderrOutput)
+	;MsgBox % "Prev clipboard: " clipboard_ "`n" Concatenate2("Errors:`n", stderrOutput)
+	MsgBox % Concatenate2("Errors:`n", stderrOutput)
+	Sleep 500
 }
 ;SetKeyDelay 100
-SetKeyDelay 15
+;SetKeyDelay 15
 Send %keys%
 Send {Backspace}{Backspace} ; Hack to delete extra two newlines added for some weird unknown reason by AHK
 
