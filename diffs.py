@@ -100,11 +100,14 @@ def addEscapedCommand(str_): # Insert plain text
     commands.append(newStr)
     currentCharOnLine += 1
 def addCommand(str_, to='commands'): # Insert plain text or AHK commands in braces
+    global currentCharOnLine
     if debugMode and verbosityLevelForDebugMode > 0:
         print('addCommand:', repr(str_), file=sys.stderr)
     commands_ = {'commands' : commands, 'navigationCommands' : navigationCommands}[to]
     if to == 'commands':
         flushNavigationCommands()
+    for i in range(str_.lower().count('{backspace}')):
+        currentCharOnLine -= 1
     commands_.append(str_)
 if debugMode:
     print(results, file=sys.stderr)

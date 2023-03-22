@@ -90,10 +90,15 @@ def diff(text1, text2):
         return list(reversed(results))
     else:
         # Find each character of the string in text1 and text2.
+        lcs, members = lcs
         results = []
         iInLcs = 0
         iInText1 = 0
         iInText2 = 0
+        debugOutput=False
+        if debugOutput:
+            import sys
+            print("lcs:",lcs, file=sys.stderr)
         while iInLcs < len(lcs):
             c1 = text1[iInText1]
             c2 = text2[iInText2]
@@ -104,6 +109,12 @@ def diff(text1, text2):
                 results.append(Addition(c2))
                 iInText2 += 1
             else:
+                if debugOutput and (c1 == '\n' or c2 == '\n'):
+                    print("--", file=sys.stderr)
+                    print(iInLcs, repr(lcs[iInLcs:]), file=sys.stderr)
+                    print(iInText1, repr(text1[iInText1:]), file=sys.stderr)
+                    print(iInText2, repr(text2[iInText2:]), file=sys.stderr)
+                    print(members[iInText1], file=sys.stderr)
                 results.append(Unchanged(lcs[iInLcs]))
                 iInLcs += 1
                 iInText1 += 1
@@ -111,7 +122,11 @@ def diff(text1, text2):
         # We now add all remaining additions since they may not be in `lcs`:
         for i in range(iInText2, len(text2)):
             results.append(Addition(text2[i]))
-
+            if debugOutput:
+                print('++++++++++++++++++++++++++++++++++++++++',text2[i], file=sys.stderr)
+        
+        if debugOutput:
+            print(results, file=sys.stderr)
         return results
 
         # # Find each character of the string in text1 and text2.
