@@ -173,7 +173,7 @@ script  = diffs.py
 ;MsgBox % clipboard_new
 stderrOutput := "<None>"
 ;keys := RunWaitOne(Concatenate2("python ", script), clipboard_, clipboard_new, stderrOutput)
-keys := RunWaitOne2(Concatenate2("python ", script), stderrOutput)
+keys := RunWaitOne2(Concatenate2(".venv\Scripts\activate.bat && python ", script), stderrOutput)
 ;MsgBox % keys
 if (stderrOutput != "") {
 	;MsgBox % "Prev clipboard: " clipboard_ "`n" Concatenate2("Errors:`n", stderrOutput)

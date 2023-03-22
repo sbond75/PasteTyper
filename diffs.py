@@ -1,3 +1,12 @@
+try:
+    import pyjion
+    pyjion.enable()
+    pyjion.config(level=2) # Highest level of optimization
+except:
+    import traceback
+    traceback.print_exc()
+    pass # No pyjion support (fast JIT for python; can install at https://github.com/tonybaloney/Pyjion )
+
 import sys
 from differ import diff, Addition, Removal, Unchanged
 
@@ -49,10 +58,11 @@ correctForDrift = True # When you drift in the editor like going right and then 
 # Get from `current` to `new` with a series of edits.
 results = diff(current, new)
 commands = [] # AutoHotkey key codes
+navigationCommands = [] # Gets flushed into the above `commands` when an edit command is encountered (like insertion or deletion). This allows optimizing out some navigation commands that are unnecessary (i.e. commands that move down a bunch when nothing is left to edit further down in the text).
 def left(msg):
     if debugMode and verbosityLevelForDebugMode > 1:
         print('left:', msg, file=sys.stderr)
-    addCommand("{Left}")
+    addCommand("{Left}", to='navigationCommands')
 def down(msg):
     global currentCharOnLine
     if correctForDrift:
@@ -62,12 +72,12 @@ def down(msg):
 
     if debugMode and verbosityLevelForDebugMode > 1:
         print('down:', msg, file=sys.stderr)
-    addCommand("{Down}")
+    addCommand("{Down}", to='navigationCommands')
 def right(msg):
     global currentCharOnLine
     if debugMode and verbosityLevelForDebugMode > 1:
         print('right:', msg, file=sys.stderr)
-    addCommand("{Right}") # TODO: add sleep for going right.. custom sleep commands for ahk? Maybe use something like `Loop, parse, {Right}` and then add sleeps, then send {Right}
+    addCommand("{Right}", to='navigationCommands') # TODO: add sleep for going right.. custom sleep commands for ahk? Maybe use something like `Loop, parse, {Right}` and then add sleeps, then send {Right}
     currentCharOnLine += 1
 def addEscapedCommand(str_): # Insert plain text
     global currentCharOnLine
@@ -86,15 +96,24 @@ def addEscapedCommand(str_): # Insert plain text
         '\t' : '    ' if not stripTabs else '' # (tabs are replaced with spaces too)
     }
     newStr = ''.join([(charMap[x] if x in charMap else x) for x in str_]) # For each character in the string, replace them if they are special ones that need to be escaped
-    commands.append(newStr) # TODO: test this
+    flushNavigationCommands()
+    commands.append(newStr)
     currentCharOnLine += 1
-def addCommand(str_): # Insert plain text or AHK commands in braces
+def addCommand(str_, to='commands'): # Insert plain text or AHK commands in braces
     if debugMode and verbosityLevelForDebugMode > 0:
         print('addCommand:', repr(str_), file=sys.stderr)
-    commands.append(str_)
+    commands_ = {'commands' : commands, 'navigationCommands' : navigationCommands}[to]
+    if to == 'commands':
+        flushNavigationCommands()
+    commands_.append(str_)
 if debugMode:
     print(results, file=sys.stderr)
 i = 0
+def flushNavigationCommands():
+    global navigationCommands
+    for command in navigationCommands:
+        commands.append(command)
+    navigationCommands = []
 while i < len(results):
     result = results[i]
     assert len(result.content) == 1
