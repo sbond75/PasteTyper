@@ -1,5 +1,6 @@
 __pycache__/
-/lastPasteTyped.txt
-/newClipboard.txt
+/lastPasteTyped*.txt
+/newClipboard*.txt
 /.venv/
 /profileResults*
+/output*.txt

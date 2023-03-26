@@ -1,7 +1,8 @@
 try:
-    import pyjion
-    pyjion.enable()
-    pyjion.config(level=2) # Highest level of optimization
+    # import pyjion
+    # pyjion.enable()
+    # pyjion.config(level=2) # Highest level of optimization
+    pass
 except:
     import traceback
     traceback.print_exc()

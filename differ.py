@@ -20,13 +20,16 @@ class Unchanged:
     content: str
 
 # Try to import faster version of `_compute_longest_common_subsequence`
-outputsString = False # Assume False
+#outputsString = False # Assume False
+outputsVArray = False # Assume False
 try:
     import pylcs
     #_compute_longest_common_subsequence = pylcs.lcs_matrix # Custom build of pylcs to include the internal matrix output
     #_compute_longest_common_subsequence = pylcs.lcs_sparse_matrix # Custom build of pylcs to include the internal matrix output
-    _compute_longest_common_subsequence = pylcs.lcs_string # Custom build of pylcs to output the longest common subsequence as a string
-    outputsString = True
+    #_compute_longest_common_subsequence = pylcs.lcs_string # Custom build of pylcs to output the longest common subsequence as a string
+    #outputsString = True
+    _compute_longest_common_subsequence = pylcs.diff # Custom build of pylcs to output a varray of changes (from version 0.8.10 of libmba's diff.c on https://www.ioplex.com/~miallen/libmba/dl/src/diff.c and https://github.com/innerout/libmba/blob/master/src/diff.c )
+    outputsVArray = True
 except:
     def _compute_longest_common_subsequence(text1, text2):
         """Computes the longest common subsequence of the two given strings.
@@ -56,7 +59,8 @@ def diff(text1, text2):
     Unchanged elements.
     """
     lcs = _compute_longest_common_subsequence(text1, text2)
-    if not outputsString:
+    #if not outputsString:
+    if not outputsVArray:
         results = []
 
         i = len(text1)
@@ -87,77 +91,99 @@ def diff(text1, text2):
                 results.append(Removal(text1[i - 1]))
                 i -= 1
 
+        # print(list(reversed(results)))
+        # exit()
         return list(reversed(results))
     else:
-        # Find each character of the string in text1 and text2.
-        lcs, members = lcs
+        varray = lcs
         results = []
-        iInLcs = 0
-        iInText1 = 0
-        iInText2 = 0
-        debugOutput=False
-        if debugOutput:
-            import sys
-            print("lcs:",lcs, file=sys.stderr)
-        while iInLcs < len(lcs):
-            c1 = text1[iInText1]
-            c2 = text2[iInText2]
-            if c1 != lcs[iInLcs]:
-                results.append(Removal(c1))
-                iInText1 += 1
-            elif c2 != lcs[iInLcs]:
-                results.append(Addition(c2))
-                iInText2 += 1
+        print(next(iter(varray)))
+        for diff in varray:
+            print(diff.op)
+            if diff.op == pylcs.DIFF_MATCH:
+                results.append(Unchanged(text1[diff.off:diff.off+diff.len]))
+            elif diff.op == pylcs.DIFF_INSERT:
+                results.append(Addition(text2[diff.off:diff.off+diff.len]))
+            elif diff.op == pylcs.DIFF_DELETE:
+                results.append(Removal(text1[diff.off:diff.off+diff.len]))
             else:
-                if debugOutput and (c1 == '\n' or c2 == '\n'):
-                    print("--", file=sys.stderr)
-                    print(iInLcs, repr(lcs[iInLcs:]), file=sys.stderr)
-                    print(iInText1, repr(text1[iInText1:]), file=sys.stderr)
-                    print(iInText2, repr(text2[iInText2:]), file=sys.stderr)
-                    print(members[iInText1], file=sys.stderr)
-                results.append(Unchanged(lcs[iInLcs]))
-                iInLcs += 1
-                iInText1 += 1
-                iInText2 += 1
-        # We now add all remaining additions since they may not be in `lcs`:
-        for i in range(iInText2, len(text2)):
-            results.append(Addition(text2[i]))
-            if debugOutput:
-                print('++++++++++++++++++++++++++++++++++++++++',text2[i], file=sys.stderr)
-        
-        if debugOutput:
-            print(results, file=sys.stderr)
+                assert False
+
         return results
 
+    # else:
+        # NOTE: this implementation doesn't always work properly, so it has been disabled:
         # # Find each character of the string in text1 and text2.
+        # lcs, members = lcs
         # results = []
-        # iInLcs1 = 0
-        # iInLcs2 = 0
+        # iInLcs = 0
         # iInText1 = 0
         # iInText2 = 0
-        # while iInLcs1 < len(lcs):
+        # debugOutput=False
+        # if debugOutput:
+        #     import sys
+        #     print("lcs:",lcs, file=sys.stderr)
+        # while iInLcs < len(lcs):
         #     c1 = text1[iInText1]
         #     c2 = text2[iInText2]
-        #     if c1 != lcs[iInLcs1]:
+        #     if c1 != lcs[iInLcs]:
         #         results.append(Removal(c1))
         #         iInText1 += 1
-        #     if c1 != c2:
+        #     elif c2 != lcs[iInLcs]:
         #         results.append(Addition(c2))
         #         iInText2 += 1
-        #     elif c2 != lcs[iInLcs2]:
+        #     else:
+        #         if debugOutput and (c1 == '\n' or c2 == '\n'):
+        #             print("--", file=sys.stderr)
+        #             print(iInLcs, repr(lcs[iInLcs:]), file=sys.stderr)
+        #             print(iInText1, repr(text1[iInText1:]), file=sys.stderr)
+        #             print(iInText2, repr(text2[iInText2:]), file=sys.stderr)
+        #             print(members[iInText1], file=sys.stderr)
+        #         results.append(Unchanged(lcs[iInLcs]))
+        #         iInLcs += 1
+        #         iInText1 += 1
         #         iInText2 += 1
-            
-        #     if c1 == lcs[iInLcs1]:
-        #         results.append(Unchanged(lcs[iInLcs1]))
-        #         iInLcs1 += 1
-        #     if c2 == lcs[iInLcs2]:
-        #         iInLcs2 += 1
         # # We now add all remaining additions since they may not be in `lcs`:
         # for i in range(iInText2, len(text2)):
         #     results.append(Addition(text2[i]))
-
-        # print(results)
+        #     if debugOutput:
+        #         print('++++++++++++++++++++++++++++++++++++++++',text2[i], file=sys.stderr)
+        
+        # if debugOutput:
+        #     print(results, file=sys.stderr)
+        # # print(results)
+        # # exit()
         # return results
+
+        # # # Find each character of the string in text1 and text2.
+        # # results = []
+        # # iInLcs1 = 0
+        # # iInLcs2 = 0
+        # # iInText1 = 0
+        # # iInText2 = 0
+        # # while iInLcs1 < len(lcs):
+        # #     c1 = text1[iInText1]
+        # #     c2 = text2[iInText2]
+        # #     if c1 != lcs[iInLcs1]:
+        # #         results.append(Removal(c1))
+        # #         iInText1 += 1
+        # #     if c1 != c2:
+        # #         results.append(Addition(c2))
+        # #         iInText2 += 1
+        # #     elif c2 != lcs[iInLcs2]:
+        # #         iInText2 += 1
+            
+        # #     if c1 == lcs[iInLcs1]:
+        # #         results.append(Unchanged(lcs[iInLcs1]))
+        # #         iInLcs1 += 1
+        # #     if c2 == lcs[iInLcs2]:
+        # #         iInLcs2 += 1
+        # # # We now add all remaining additions since they may not be in `lcs`:
+        # # for i in range(iInText2, len(text2)):
+        # #     results.append(Addition(text2[i]))
+
+        # # print(results)
+        # # return results
 
 '''(.venv) >python diffs.py human chimpanzee
 [Addition(content='c'), Unchanged(content='h'), Removal(content='u'), Addition(c

@@ -180,7 +180,7 @@ if (stderrOutput != "") {
 	MsgBox % Concatenate2("Errors:`n", stderrOutput)
 	Sleep 500
 }
-SetKeyDelay 100
+;SetKeyDelay 100
 ;SetKeyDelay 15
 Send %keys%
 Send {Backspace}{Backspace} ; Hack to delete extra two newlines added for some weird unknown reason by AHK
