@@ -97,18 +97,21 @@ def diff(text1, text2):
     else:
         varray = lcs
         results = []
-        print(next(iter(varray)))
+        #print(next(iter(varray)))
         for diff in varray:
-            print(diff.op)
+            if diff is None:
+                break # Manual StopIteration for now...
+            # print(diff.op, diff.off, diff.len)
             if diff.op == pylcs.DIFF_MATCH:
-                results.append(Unchanged(text1[diff.off:diff.off+diff.len]))
+                for x in text1[diff.off:diff.off+diff.len]: results.append(Unchanged(x))
             elif diff.op == pylcs.DIFF_INSERT:
-                results.append(Addition(text2[diff.off:diff.off+diff.len]))
+                for x in text2[diff.off:diff.off+diff.len]: results.append(Addition(x))
             elif diff.op == pylcs.DIFF_DELETE:
-                results.append(Removal(text1[diff.off:diff.off+diff.len]))
+                for x in text1[diff.off:diff.off+diff.len]: results.append(Removal(x))
             else:
-                assert False
+                assert False, "bad op"
 
+        # print(results)
         return results
 
     # else:
