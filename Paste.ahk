@@ -188,12 +188,32 @@ txtfile2.close()
 ;dir    := A_ScriptDir
 ;script  = %dir%\diffs.py
 script  = diffs.py
+
+; Check if A_ScriptName ends with `.ahk` which would indicate this is not running in a compiled exe made with ahk2exe
+isInAHK2Exe := true ; Assume true
+regex := ".*\.ahk$"
+FoundPos := RegExMatch(A_ScriptName, "O)"regex, matchObj)
+If (ErrorLevel != 0) {
+	MsgBox % "Regex error in regex" regex
+} Else If (FoundPos != 0) {
+	; Found
+	If (matchObj.Pos == 1 and matchObj.Len == StrLen(Title)) {
+		; It is an entire match
+		isInAHK2Exe := false
+	}
+}
+
+if (isInAHK2Exe = true) {
+	pythonCmd := Concatenate2(".venv\Scripts\activate.bat && python ", script)
+} else {
+	pythonCmd := "diffs/diffs.exe"
+}
 ; Run, %ComSpec% /k python "%script%" "%clipboard_%" "%clipboard_new%"
 ;MsgBox % clipboard_
 ;MsgBox % clipboard_new
 stderrOutput := "<None>"
 ;keys := RunWaitOne(Concatenate2("python ", script), clipboard_, clipboard_new, stderrOutput)
-keys := RunWaitOne2(Concatenate2(".venv\Scripts\activate.bat && python ", script), stderrOutput)
+keys := RunWaitOne2(pythonCmd, stderrOutput)
 ;MsgBox % keys
 if (stderrOutput != "") {
 	;MsgBox % "Prev clipboard: " clipboard_ "`n" Concatenate2("Errors:`n", stderrOutput)

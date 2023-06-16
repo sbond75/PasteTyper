@@ -4,5 +4,10 @@ __pycache__/
 /.venv/
 /profileResults*
 /output*.txt
-/releases
+/releases/
 /PasteTyper-*.exe
+
+# pyinstaller-related files and folders
+/dist/
+/build/
+/diffs.spec

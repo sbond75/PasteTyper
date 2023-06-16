@@ -24,6 +24,10 @@ The releases include a pre-compiled [Paste.ahk](Paste.ahk) as a Windows executab
 4. Install AutoHotkey. It is unknown if the latest version works. If not, try [v1.1.24.00](https://www.autohotkey.com/download/1.1/AutoHotkey112400_Install.exe) which is known to work (non-installer version [here](https://www.autohotkey.com/download/1.1/AutoHotkey112400_x64.zip)).
 5. Open [Paste.ahk](Paste.ahk) with AutoHotkey.
 
+To build a release executable:
+1. In the venv created above, run `pip install pyinstaller` ([pyinstaller](https://pyinstaller.org/en/stable/) is used to package the Python scripts into an executable).
+2. Run `bash makeRelease.sh` from within a [Git Bash](https://git-scm.com/downloads) terminal.
+
 ## Project structure
 - [Paste.ahk](Paste.ahk) contains the AutoHotkey program.
 - [differ.py](differ.py) contains a diffing function `diff` which is used by [diffs.py](diffs.py).

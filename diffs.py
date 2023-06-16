@@ -12,7 +12,7 @@ import sys
 from differ import diff, Addition, Removal, Unchanged
 
 # Configurable #
-debugMode = False # Configurable
+debugMode = True # Configurable
 verbosityLevelForDebugMode = 2 # 0 is quietest, 1 is higher, 2 is highest
 stripTabs = True #False # Removes tabs
 stripLeadingWhitespace = True # Removes leading whitespace such as spaces for indentation
