@@ -10,11 +10,12 @@ The releases include a pre-compiled [Paste.ahk](Paste.ahk) as a Windows executab
 
 ## Usage
 1. Copy text that you want to paste into ComputerCraft or some program that supports similar editing controls (arrow keys to move the cursor, etc.).
-2. Press Shift-Alt-p to paste into ComputerCraft or another program. It will type in only the changes since the last paste performed with Shift-Alt-p.
+2. Press `Shift-Alt-p` to paste into ComputerCraft or another program. It will type in only the changes since the last paste performed with `Shift-Alt-p`.
 
 ## Advanced usage
-- To clear the last saved clipboard contents, press Shift-Alt-i. This will make [Paste.ahk](Paste.ahk) assume that the previous paste performed was empty, causing it to type out all the text again.
-- To make [Paste.ahk](Paste.ahk) assume that ComputerCraft or whatever program already has the current clipboard contents, press Shift-Alt-o. In other words, after pressing this, then the next time you paste, there will be no changes to the contents in ComputerCraft or whatever program.
+- To clear the last saved clipboard contents, press `Shift-Alt-i`. This will make [Paste.ahk](Paste.ahk) assume that the previous paste performed was empty, causing it to type out all the text again.
+- To make [Paste.ahk](Paste.ahk) assume that ComputerCraft or whatever program already has the current clipboard contents, press `Shift-Alt-o`. In other words, after pressing this, then the next time you paste, there will be no changes to the contents in ComputerCraft or whatever program.
+- To exit the current ComputerCraft editor, remove a specific script (the script name must be edited in Paste.ahk), then edit it again (so as to clear the file) and paste the clipboard into it in a basic way, press `Shift-Alt-l`.
 
 ## Development usage
 1. Clone this repo with `git clone --recursive https://github.com/sbond75/PasteTyper.git`, or clone it and then use `git submodule update --init --recursive` in the repo root.

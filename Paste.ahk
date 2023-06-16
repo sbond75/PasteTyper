@@ -167,8 +167,14 @@ return
 
 +!p:: ; Shift-Alt-p : paste deltas
 ; computercraft fixes ;
-Send, {Space up}
-Send, {Ctrl up}
+;; works in Paste.ahk but not in the generated exe from ahk2exe... : ;;
+; Send, {Space up}
+; Send, {Ctrl up}
+;; ;;
+
+;; `{Blind}`: weird thing, not sure what it does, but it seems to fix it on the ahk2exe version ( https://www.autohotkey.com/docs/v1/lib/Send.htm#Blind )
+Send, {Blind}{Space up}
+Send, {Blind}{Ctrl up}
 ; ;
 
 clipboard_new := ReadClipboard()
