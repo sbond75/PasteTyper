@@ -5,7 +5,7 @@ AutoHotkey and Python scripts that type out the contents of the clipboard using 
 Only Windows is supported, since [AutoHotkey](https://www.autohotkey.com/) is used.
 
 ## Release version
-Download one of the releases from [the releases page](https://github.com/sbond75/PasteTyper/releases), extract it, and run the PasteTyper program included.
+Download one of the [releases](https://github.com/sbond75/PasteTyper/releases), extract it, and run the PasteTyper program included.
 The releases include a pre-compiled [Paste.ahk](Paste.ahk) as a Windows executable, as well as a Python interpreter and the dependencies it needs.
 
 ## Usage
