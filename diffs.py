@@ -11,7 +11,26 @@ except:
 import sys
 from differ import diff, Addition, Removal, Unchanged
 
+# Configurable #
+debugMode = False # Configurable
+verbosityLevelForDebugMode = 2 # 0 is quietest, 1 is higher, 2 is highest
+stripTabs = True #False # Removes tabs
+stripLeadingWhitespace = True # Removes leading whitespace such as spaces for indentation
+# #
+
 theseAreFiles = False
+def processLine(line):
+    if stripTabs:
+        line = line.replace('\t', '')
+    if stripLeadingWhitespace:
+        line = line.lstrip()
+    return line
+def readAndProcessFile(f):
+    acc = ''
+    for line in f:
+        line = processLine(line)
+        acc += line
+    return acc
 if len(sys.argv) > 2:
     current = sys.argv[1]
     new = sys.argv[2]
@@ -20,10 +39,13 @@ if len(sys.argv) > 2:
         current = open(current, 'r')
         new = open(new, 'r')
         
-        current_ = current.read()
+        #current_ = current.read()
+        current_ = readAndProcessFile(current)
+    
         current.close()
         current = current_
-        new_ = new.read()
+        #new_ = new.read()
+        new_ = readAndProcessFile(new)
         new.close()
         new = new_
 else:
@@ -36,6 +58,9 @@ else:
         if line.rstrip() == marker:
             mode += 1
             continue
+
+        line = processLine(line)
+
         if mode == 0:
             current += line
         elif mode == 1:
@@ -47,12 +72,6 @@ else:
 # The editor starts at the top of the file in ComputerCraft.
 # currentLine = 0
 currentCharOnLine = 0
-
-# Configurable #
-debugMode = False # Configurable
-verbosityLevelForDebugMode = 2 # 0 is quietest, 1 is higher, 2 is highest
-stripTabs = False # Removes tabs
-# #
 
 correctForDrift = True # When you drift in the editor like going right and then down sometimes doesn't bring you back to the start of a line
 
@@ -94,9 +113,11 @@ def addEscapedCommand(str_): # Insert plain text
         '!' : '{!}',
         '+' : '{+}',
         '#' : '{#}',
-        '\t' : '    ' if not stripTabs else '' # (tabs are replaced with spaces too)
+        #'\t' : '    ' if not stripTabs else '' # (tabs are replaced with spaces too)
     }
     newStr = ''.join([(charMap[x] if x in charMap else x) for x in str_]) # For each character in the string, replace them if they are special ones that need to be escaped
+    # if stripLeadingWhitespace:
+    #     newStr = newStr.lstrip()
     flushNavigationCommands()
     commands.append(newStr)
     currentCharOnLine += 1

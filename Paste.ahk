@@ -1,5 +1,8 @@
 ;; Config ;;
-stripTabs := true ; Removes tabs if set to `true`. Use `false` to make it not remove tabs.
+
+;; Nvm:
+;stripTabs := true ; Removes tabs if set to `true`. Use `false` to make it not remove tabs.
+;stripLeadingWhitespace := true ; Removes leading whitespace such as spaces for indentation
 ;; ;;
 
 Thread, interrupt, 50, 2000 ; attempt to do https://www.autohotkey.com/board/topic/48908-how-do-i-stop-a-runaway-script-panic-button/
@@ -103,14 +106,24 @@ RunWaitOne2(command, byref stderrOutput) {
 }
 
 
-ReadClipboard() {
-        Global stripTabs
+ProcessText(retval) {
+        ; Global stripTabs
+	; Global stripLeadingWhitespace
 
+        ; if (stripTabs = true) {
+	;   StringCaseSense, On
+        ;   retval := StrReplace(retval, A_Tab) ; replace tabs with the empty string
+        ; }
+	; if (stripLeadingWhitespace = true) {
+	; 	; ``am)` are some options from https://www.autohotkey.com/docs/v1/misc/RegEx-QuickRef.htm#Options and https://www.autohotkey.com/board/topic/17237-regex-doesnt-match-at-the-beginning-of-all-new-lines/ where `a means to recognize more types of newlines which is required to match a multiline string like above. m option makes it multiline (can match across multiple lines).
+	; 	retval := regexreplace(retval, "`am)^\s+") ;trim beginning whitespace   ; https://www.autohotkey.com/board/topic/57765-trim-leading-and-trailing-white-space-from-the-clipboard/
+	; }
+	return retval
+}
+
+ReadClipboard() {
         retval := Clipboard
-        if (stripTabs = true) {
-	  StringCaseSense, On
-          retval := StrReplace(retval, A_Tab) ; replace tabs with the empty string
-        }
+	retval := ProcessText(retval)
 	return retval
 }
 
@@ -129,6 +142,7 @@ LoadClipboard_() {
 	; {
         ;   msgbox, Loaded last typed text from lastPasteTyped.txt
         ; }
+	clipboard_ := ProcessText(clipboard_)
 	return clipboard_
 }
 clipboard_ := LoadClipboard_()
@@ -182,6 +196,7 @@ if (stderrOutput != "") {
 }
 ;SetKeyDelay 100
 ;SetKeyDelay 15
+SetKeyDelay 30
 Send %keys%
 Send {Backspace}{Backspace} ; Hack to delete extra two newlines added for some weird unknown reason by AHK
 
