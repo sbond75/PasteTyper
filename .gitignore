@@ -4,3 +4,5 @@ __pycache__/
 /.venv/
 /profileResults*
 /output*.txt
+/releases
+/PasteTyper-*.exe
