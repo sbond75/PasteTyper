@@ -149,6 +149,13 @@ clipboard_ := LoadClipboard_()
 
 
 +!o:: ; Shift-Alt-o : mark original as already pasted
+
+MSGBox, 4, , Mark clipboard diffs as already pasted?
+IfMsgBox, No
+	return
+Else {
+}
+
 clipboard_ := ReadClipboard()
 SaveClipboard_(clipboard_)
 return
@@ -183,6 +190,14 @@ txtfile2 := FileOpen("newClipboard.txt", "w", UTF-8)
 txtfile2.write(clipboard_new)
 txtfile2.close()
 
+; Ensure lastPasteTyped.txt exists (it can be empty)
+; https://www.autohotkey.com/docs/v1/lib/FileExist.htm
+if (!FileExist("lastPasteTyped.txt"))
+{
+  ; https://www.autohotkey.com/board/topic/23950-how-to-create-blank-files/
+  FileAppend,, lastPasteTyped.txt
+}
+
 ; Find differences in clipboard using Python
 ; https://www.autohotkey.com/boards/viewtopic.php?style=19&f=76&t=98016 , https://www.autohotkey.com/docs/v1/lib/Run.htm
 ;dir    := A_ScriptDir
@@ -192,39 +207,53 @@ script  = diffs.py
 ; Check if A_ScriptName ends with `.ahk` which would indicate this is not running in a compiled exe made with ahk2exe
 isInAHK2Exe := true ; Assume true
 regex := ".*\.ahk$"
-FoundPos := RegExMatch(A_ScriptName, "O)"regex, matchObj)
+;msgbox % A_ScriptName
+haystack := A_ScriptName
+FoundPos := RegExMatch(haystack, "O)"regex, matchObj)
 If (ErrorLevel != 0) {
 	MsgBox % "Regex error in regex" regex
 } Else If (FoundPos != 0) {
 	; Found
-	If (matchObj.Pos == 1 and matchObj.Len == StrLen(Title)) {
+	If (matchObj.Pos == 1 and matchObj.Len == StrLen(haystack)) {
 		; It is an entire match
 		isInAHK2Exe := false
 	}
 }
 
-if (isInAHK2Exe = true) {
+;msgbox % isInAHK2Exe
+if (isInAHK2Exe = false) {
 	pythonCmd := Concatenate2(".venv\Scripts\activate.bat && python ", script)
 } else {
-	pythonCmd := "diffs/diffs.exe"
+	pythonCmd := "diffs\diffs.exe"
 }
 ; Run, %ComSpec% /k python "%script%" "%clipboard_%" "%clipboard_new%"
 ;MsgBox % clipboard_
 ;MsgBox % clipboard_new
-stderrOutput := "<None>"
+;stderrOutput := "<None>"
+stderrOutput := ""
 ;keys := RunWaitOne(Concatenate2("python ", script), clipboard_, clipboard_new, stderrOutput)
 keys := RunWaitOne2(pythonCmd, stderrOutput)
 ;MsgBox % keys
 if (stderrOutput != "") {
 	;MsgBox % "Prev clipboard: " clipboard_ "`n" Concatenate2("Errors:`n", stderrOutput)
-	MsgBox % Concatenate2("Errors:`n", stderrOutput)
+	;MsgBox % Concatenate2("Errors:`n", stderrOutput)
+	;Sleep 500
+}
+
+MSGBox, 4, , Paste clipboard diffs?
+IfMsgBox, No
+	return
+Else {
 	Sleep 500
 }
+
 ;SetKeyDelay 100
 ;SetKeyDelay 15
 SetKeyDelay 30
 Send %keys%
-Send {Backspace}{Backspace} ; Hack to delete extra two newlines added for some weird unknown reason by AHK
+if (keys != "") {
+	Send {Backspace}{Backspace} ; Hack to delete extra two newlines added for some weird unknown reason by AHK [note: part of the reason is that python prints two extra newlines in its print calls for an unknown reason -- you can test it with `python diffs.py "" ""` and see the newlines]
+}
 
   MSGBox, 4, , Was it successful?`n("No" will keep using old diff)
   IfMsgBox, No
@@ -238,6 +267,13 @@ return
 
 
 +!l:: ; Shift-Alt-l : paste basic
+
+MSGBox, 4, , Do you want to exit the current editor, remove and re-edit existing file, and paste clipboard diffs?
+IfMsgBox, No
+	return
+Else {
+	Sleep 500
+}
 
 ; Set the target window title for Minecraft
 ;SetTitleMatchMode, 2
